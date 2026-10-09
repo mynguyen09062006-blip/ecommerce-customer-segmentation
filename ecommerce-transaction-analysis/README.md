@@ -1,62 +1,74 @@
 # E-commerce Customer Segmentation (RF Model)
 
-**Business question:** Which customers of a UK online gift retailer should the CRM team protect, re-activate or de-prioritise, and when are customers most active?
+## What this project does
 
-Python analysis of 500K+ transaction lines (Dec 2010 – Nov 2011), covering data cleaning, EDA on growth and customer behaviour, and a Recency–Frequency (RF) segmentation that turns 4,293 customers into 7 actionable groups.
+This project analyses one year of transactions (Dec 2010 – Nov 2011) from a UK online gift shop. It looks at how sales and customers change over time, then groups customers with a Recency–Frequency (RF) model based on how recently and how often they buy. I built it in Python during the Business Intelligence track at MCI Academy.
 
-## Key insights
+## Why it is useful
 
-| # | Insight | So what? |
-|---|---|---|
-| 1 | Monthly revenue roughly **doubled** from £0.59M (Dec 2010) to £1.19M (Nov 2011), and orders rose **+81%** (1,708 → 3,086). The steepest climb came in Sep–Nov. | Seasonal (pre-Christmas) demand is the main growth driver, so stock and campaigns should be planned for Q4. |
-| 2 | Only **12% of customers are Loyal** (524), while **42% are "Losing" a relationship** (Losing loyal + Losing potential loyal = 1,810). | The biggest opportunity is re-activation, not acquisition. |
-| 3 | Customer activity peaks on **Thursday** and between **12:00–14:00**. There are no Saturday transactions. | Send emails and push promotions just before the midday peak on weekdays. |
-| 4 | The UK generates ~82% of revenue, but **Netherlands, Australia and Singapore have the highest AOV** (£2,000–3,300 per order). | These are wholesale-like international accounts that are worth key-account treatment. |
+A shop that knows which customers are loyal and which are drifting away can spend its marketing budget better. It can reward loyal buyers, win back customers who have stopped ordering, and avoid spending too much on low-value one-time buyers. The EDA also shows *when* customers are most active, which helps with timing campaigns.
 
-## RF segmentation
+Main results:
+- Revenue grew from about £0.59M (Dec 2010) to £1.19M (Nov 2011), with most of the growth in Sep–Nov.
+- Customers order most on Thursdays and around midday (12:00–14:00).
+- The UK brings ~82% of revenue, while the Netherlands, Australia and Singapore have the highest order values.
+- Only 12% of customers are Loyal, and 42% are in the "Losing" segments, so win-back campaigns look like the biggest opportunity.
+
+## How I processed the data
+
+**1. Loading and checking**
+- Loaded `transaction_data.csv` with pandas (516K rows, 8 columns) and checked data types and missing values with `info()` and `isnull().sum()`.
+
+**2. Cleaning**
+- Dropped rows with missing values, which were mostly transactions without a customer ID that cannot be used for segmentation.
+- Converted `invoice_date` to datetime and `cust_id` to integer.
+- Some quantities and prices were negative (returns), so I converted them to positive values with `abs()`.
+- Added `amount = quantity × unit_price`.
+
+**3. Feature engineering**
+- Extracted `month`, `day`, `hour`, `year_month` and `week_days` from `invoice_date`.
+- Found each customer's first purchase month and tagged every transaction as `new` or `old` (returning).
+
+**4. Exploratory analysis**
+- Monthly active users (unique customers per month), number of orders and revenue per month.
+- Unique customers by weekday and by hour.
+- Top 10 countries by revenue, and AOV (revenue ÷ number of orders) by country.
+- Tracked how the Dec 2010 new customers kept buying in later months.
+
+**5. RF segmentation**
+- Recency = days between a customer's last order and the last date in the data; Frequency = number of unique invoices.
+- Scored both from 1 to 3:
 
 | Score | 1 | 2 | 3 |
 |---|---|---|---|
-| **Recency** (days since last order) | > 48 | 15–48 | < 15 |
-| **Frequency** (number of orders) | 1 | 2–5 | > 5 |
+| Recency (days) | > 48 | 15–48 | < 15 |
+| Frequency (orders) | 1 | 2–5 | > 5 |
+
+- Combined the two scores (e.g. `33`, `21`) and mapped them to 7 segments: Loyal, Potential loyal, New customer, Losing loyal, Losing potential loyal, Lost loyal and Low value.
+- Visualised the segment sizes with a bar chart and an R × F heatmap.
 
 ![RF segment map](imgs/img2.png)
 
-| Segment | Customers | Recommended action |
-|---|---:|---|
-| Loyal | 524 | VIP perks and referral programme |
-| Potential loyal | 434 | Bundles and loyalty points to push into Loyal |
-| New customer | 115 | Onboarding and second-purchase voucher |
-| Losing potential loyal | 1,488 | Win-back email with a time-limited offer |
-| Losing loyal | 322 | Personal outreach before they churn |
-| Lost loyal | 180 | Call or survey to find the reason they left |
-| Low value | 1,230 | Low-cost automated campaigns only |
+## Getting started
 
-## Workflow
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/mynguyen09062006-blip/push-code.git
+   cd push-code/ecommerce-transaction-analysis
+   ```
+2. Install the libraries:
+   ```bash
+   pip install pandas matplotlib seaborn jupyter
+   ```
+3. Download the [UCI Online Retail dataset](https://archive.ics.uci.edu/dataset/352/online+retail) and save it as `data/transaction_data.csv`.
+4. Open `Cleaning and Visualizing Data.ipynb` in Jupyter and choose **Run All**.
 
-1. **Cleaning:** removed rows with missing values (incl. customer IDs), fixed dtypes, converted negative quantity/price values, and added `amount = quantity × unit_price` plus time features (month, weekday, hour).
-2. **EDA:** monthly active users, orders and revenue by month, activity by weekday and hour, top countries, AOV by country, and new vs. returning customers.
-3. **RF model:** calculated Recency and Frequency per customer, scored them 1–3, mapped scores to 7 segments, and visualised the results with a bar chart and an R×F heatmap.
+**Files**
+- `Cleaning and Visualizing Data.ipynb`: main notebook (cleaning → EDA → RF)
+- `01_e_commerce_data_eda.ipynb`: project brief and guiding questions
+- `Customer segment map.xlsx`: segment definitions
+- `imgs/`: RF illustration and segment map
 
-## Project structure
+## Getting help
 
-```
-ecommerce-transaction-analysis/
-├── Cleaning and Visualizing Data.ipynb   # Main analysis (cleaning → EDA → RF)
-├── 01_e_commerce_data_eda.ipynb           # Project brief & guiding questions
-├── Customer segment map.xlsx              # Segment definitions
-└── imgs/                                  # RF illustration & segment map
-```
-
-## Tools
-
-Python (pandas, matplotlib, seaborn), Jupyter Notebook, Excel
-
-## Data
-
-[UCI Online Retail dataset](https://archive.ics.uci.edu/dataset/352/online+retail): transactions of a UK-based non-store online retailer selling all-occasion gifts, many of whose customers are wholesalers. Place the file at `data/transaction_data.csv` to re-run the notebook.
-
-## Next steps
-
-- Add Monetary value (full RFM) and compare it with K-means clustering
-- Build a Power BI dashboard for the CRM team to track segment movement month by month
+If you have a question or find a problem, please open an issue in this repository or contact me on [LinkedIn](https://www.linkedin.com/in/my-nguyen-anh/) or at mynguyen09062006@gmail.com.
